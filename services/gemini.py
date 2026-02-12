@@ -70,7 +70,7 @@ def analyze_video(video_path: str) -> Recipe:
         print("Generating images for steps...")
         for step in data.get("steps", []):
             try:
-                image_prompt = f"Food photography, vertical 9:16 aspect ratio. Create a high quality, appetizing image for this recipe step: {step['description']}. The dish is {data.get('title')}."
+                image_prompt = f"Food photography, vertical 9:16 aspect ratio. Create a high quality, appetizing image for this recipe step: {step['description']}. The dish is {data.get('title')}. No text, no words, no letters."
                 
                 # Using imagen-3.0-generate-001 or gemini-3-pro-image-preview if available
                 # The user requested 'gemini-3-pro-image-preview'. 
