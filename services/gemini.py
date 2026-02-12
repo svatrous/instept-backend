@@ -2,7 +2,7 @@ import google.generativeai as genai
 import os
 import time
 import json
-from ..models import Recipe
+from models import Recipe
 from dotenv import load_dotenv
 
 load_dotenv()
