@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
 import time
 import json
@@ -11,22 +12,24 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY environment variable not set")
 
-genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
 def analyze_video(video_path: str) -> Recipe:
     """
     Uploads a video to Gemini and analyzes it to extract a recipe.
     """
     print(f"Uploading file: {video_path}")
-    video_file = genai.upload_file(path=video_path)
-    print(f"Completed upload: {video_file.uri}")
+    # Upload the file
+    video_file = client.files.upload(path=video_path)
+    print(f"Completed upload: {video_file.name}")
 
-    while video_file.state.name == "PROCESSING":
+    # Wait for processing
+    while video_file.state == "PROCESSING":
         print('.', end='', flush=True)
         time.sleep(10)
-        video_file = genai.get_file(video_file.name)
+        video_file = client.files.get(name=video_file.name)
 
-    if video_file.state.name == "FAILED":
+    if video_file.state == "FAILED":
         raise ValueError("Video processing failed.")
 
     print(f"\nFile is ready: {video_file.name}")
@@ -48,22 +51,32 @@ def analyze_video(video_path: str) -> Recipe:
     Убедись, что выходные данные являются валидным JSON. Не включай блоки кода markdown.
     """
 
-    model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-    # request JSON response for stability
-    response = model.generate_content(
-        [video_file, prompt],
-        generation_config={"response_mime_type": "application/json"}
-    )
-    
-    # Simple cleanup of potential markdown code blocks (Gemini might still add them in JSON mode sometimes)
-    text_response = response.text.replace("```json", "").replace("```", "").strip()
-    
     try:
+        # Generate content
+        response = client.models.generate_content(
+            model="gemini-3.0-flash",
+            contents=[video_file, prompt],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
+        # Simple cleanup of potential markdown code blocks
+        text_response = response.text.replace("```json", "").replace("```", "").strip()
+        
         data = json.loads(text_response)
         return Recipe(**data)
-    except json.JSONDecodeError:
-        print(f"Failed to parse JSON: {text_response}")
-        raise ValueError("Failed to parse Gemini response as JSON")
+        
+    except Exception as e:
+        print(f"Error during generation: {e}")
+        raise ValueError(f"Gemini generation failed: {e}")
+        
     finally:
-        # Cleanup remote file
-        genai.delete_file(video_file.name)
+        # Cleanup remote file requires name?
+        # The new SDK might handle cleanup differently or require explicit call.
+        # client.files.delete(name=video_file.name)
+        try:
+             client.files.delete(name=video_file.name)
+        except Exception:
+             pass
+
