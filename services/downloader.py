@@ -17,9 +17,17 @@ def download_instagram_video(url: str, output_dir: str = "temp") -> str:
         'outtmpl': output_template,
         'format': 'best',
         'noplaylist': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        }
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)
-        return filename
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            return filename
+    except yt_dlp.utils.DownloadError as e:
+        raise ValueError(f"Failed to download video: {str(e)}")
+    except Exception as e:
+        raise ValueError(f"An unexpected error occurred during download: {str(e)}")
