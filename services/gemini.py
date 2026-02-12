@@ -85,7 +85,7 @@ def analyze_video(video_path: str) -> Recipe:
                 # OR 'gemini-3-pro-image-preview' as requested.
                 
                 image_response = client.models.generate_images(
-                    model='imagen-3.0-generate-002', # Updating to 002 version as 001 was not found
+                    model='gemini-2.5-flash-image', # Updating to user-suggested model
                     prompt=image_prompt,
                     config=types.GenerateImagesConfig(
                         number_of_images=1,
