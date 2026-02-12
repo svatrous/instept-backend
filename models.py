@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
 class Ingredient(BaseModel):
@@ -24,6 +24,11 @@ class Recipe(BaseModel):
     hero_image_url: Optional[str] = None
     ingredients: List[Ingredient]
     steps: List[Step]
+
+    @field_validator('calories', 'time', 'difficulty', 'category', mode='before')
+    @classmethod
+    def coerce_to_string(cls, v):
+        return str(v)
 
 class AnalyzeRequest(BaseModel):
     url: str
