@@ -288,6 +288,11 @@ def analyze_video(video_path: str, video_url: str, language: str = "en") -> Reci
         if "author_avatar" not in data:
             data["author_avatar"] = "https://i.pravatar.cc/150?u=chef" # Placeholder or local asset later
         
+        # Ensure string fields are strings (Gemini sometimes returns ints)
+        for field in ["calories", "time", "difficulty", "category"]:
+            if field in data and not isinstance(data[field], str):
+                data[field] = str(data[field])
+        
         # Generate images for each step
         print("Generating images for steps...")
         for step in data.get("steps", []):
