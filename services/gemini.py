@@ -70,7 +70,7 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
         print(f"Translation failed: {e}")
         return recipe # Fallback to original
 
-def analyze_video(video_path: str, video_url: str, language: str = "en") -> Recipe:
+def analyze_video(video_path: str | None, video_url: str, language: str = "en") -> Recipe:
     """
     Uploads a video to Gemini and analyzes it to extract a recipe.
     Handles caching and translation.
@@ -90,6 +90,10 @@ def analyze_video(video_path: str, video_url: str, language: str = "en") -> Reci
             translated = translate_recipe(cached_en, language)
             save_recipe(translated, video_url, language)
             return translated
+
+    # If we are here, we need to process the video.
+    if not video_path:
+        raise ValueError("Video path is required since no cache was found.")
 
     # 3. Analyze video (Force English output for consistency)
     print(f"Uploading file: {video_path}")

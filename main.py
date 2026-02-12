@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 from services.downloader import download_instagram_video
-from services.gemini import analyze_video
+from services.gemini import analyze_video, get_cached_recipe
 from models import Recipe, AnalyzeRequest
 
 from fastapi.staticfiles import StaticFiles
@@ -17,10 +17,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def analyze_recipe(request: AnalyzeRequest):
     video_path = None
     try:
-        # 1. Download Video
-        print(f"Downloading video from: {request.url}")
-        video_path = download_instagram_video(request.url)
-        print(f"Video downloaded to: {video_path}")
+        # Check if we can skip download
+        has_cache = get_cached_recipe(request.url, request.language) or \
+                   (request.language != "en" and get_cached_recipe(request.url, "en"))
+
+        if not has_cache:
+            # 1. Download Video
+            print(f"Downloading video from: {request.url}")
+            video_path = download_instagram_video(request.url)
+            print(f"Video downloaded to: {video_path}")
+        else:
+            print("Cache found, skipping download.")
 
         # 2. Analyze with Gemini
         print("Analyzing with Gemini...")
