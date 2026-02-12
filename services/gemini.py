@@ -84,44 +84,40 @@ def analyze_video(video_path: str) -> Recipe:
                 # Let's assuming client.models.generate_images is the way, and model is 'imagen-3.0-generate-001' 
                 # OR 'gemini-3-pro-image-preview' as requested.
                 
-                image_response = client.models.generate_images(
-                    model='gemini-2.5-flash-image', # Updating to user-suggested model
-                    prompt=image_prompt,
-                    config=types.GenerateImagesConfig(
-                        number_of_images=1,
-                        aspect_ratio="9:16"
+                # Generate image using generate_content method for Gemini 3 Pro / 2.5 Flash Image
+                # Model 'gemini-3-pro-image-preview' supports aspect ratio config
+                try:
+                    image_response = client.models.generate_content(
+                        model='gemini-3-pro-image-preview', 
+                        contents=image_prompt,
+                        config=types.GenerateContentConfig(
+                            response_modalities=['IMAGE'],
+                            image_config=types.ImageConfig(
+                                aspect_ratio="9:16",
+                                image_size="1K"
+                            )
+                        )
                     )
-                )
-                
-                # Assuming the response contains a link or base64. 
-                # The SDK usually returns generated_images[0].image.uri OR .image_bytes
-                # If it returns bytes, we need to save it. 
-                # BUT the requirement is to have a URL. We don't have cloud storage here easily.
-                # Exception: Python SDK usually returns bytes. We need to save to static folder.
-                
-                # WAIT: The user asked for "gemini-3-pro-image-preview".
-                # If this model supports text-to-image, it might work.
-                # But usually Gemini models are text/multimodal-in -> text-out.
-                # Imagen is text -> image-out.
-                
-                # For the sake of this task, I will try to use Imagen 3.0 as it's the standard for image gen on Gemini API.
-                # I will save the image locally and serve it?
-                # The backend is FastAPI. I can mount a static directory.
-                
-                # Saving image locally
-                if image_response.generated_images:
-                    img_data = image_response.generated_images[0].image.image_bytes
-                    filename = f"step_{int(time.time())}_{data['steps'].index(step)}.png"
-                    os.makedirs("static", exist_ok=True)
-                    with open(f"static/{filename}", "wb") as f:
-                        f.write(img_data)
-                    
-                    # Construct URL (assuming server runs on localhost/accessible IP)
-                    # Ideally we need a base URL env var. For now, relative path or assuming standard structure.
-                    step['image_url'] = f"/static/{filename}"
-                    print(f"Generated image for step: {step['description'][:20]}...")
+
+                    # Saving image locally
+                    for part in image_response.parts:
+                        if part.inline_data:
+                            img_data = part.inline_data.data # This is bytes
+                            
+                            filename = f"step_{int(time.time())}_{data['steps'].index(step)}.png"
+                            os.makedirs("static", exist_ok=True)
+                            with open(f"static/{filename}", "wb") as f:
+                                f.write(img_data)
+                            
+                            step['image_url'] = f"/static/{filename}"
+                            print(f"Generated image for step: {step['description'][:20]}...")
+                            break # Only need one image
+                except Exception as e:
+                    print(f"Failed to generate content (image) for step: {e}")
+                    step['image_url'] = None
+
             except Exception as e:
-                print(f"Failed to generate image for step: {e}")
+                print(f"Failed to process step image: {e}")
                 step['image_url'] = None
 
         return Recipe(**data)
