@@ -54,7 +54,7 @@ def analyze_video(video_path: str) -> Recipe:
     try:
         # Generate content
         response = client.models.generate_content(
-            model="gemini-3.0-flash",
+            model="gemini-3-pro-preview",
             contents=[video_file, prompt],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
