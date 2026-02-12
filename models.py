@@ -6,11 +6,15 @@ class Ingredient(BaseModel):
     amount: str
     unit: str
 
+class Step(BaseModel):
+    description: str
+    image_url: Optional[str] = None
+
 class Recipe(BaseModel):
     title: str
     description: str
     ingredients: List[Ingredient]
-    steps: List[str]
+    steps: List[Step]
 
 class AnalyzeRequest(BaseModel):
     url: str

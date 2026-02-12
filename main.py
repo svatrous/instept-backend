@@ -5,7 +5,13 @@ from services.downloader import download_instagram_video
 from services.gemini import analyze_video
 from models import Recipe, AnalyzeRequest
 
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI()
+
+# Mount static directory for generated images
+os.makedirs("static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.post("/analyze", response_model=Recipe)
 async def analyze_recipe(request: AnalyzeRequest):
