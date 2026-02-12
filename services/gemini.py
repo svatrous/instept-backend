@@ -86,35 +86,49 @@ def analyze_video(video_path: str) -> Recipe:
                 
                 # Generate image using generate_content method for Gemini 3 Pro / 2.5 Flash Image
                 # Model 'gemini-3-pro-image-preview' supports aspect ratio config
-                try:
-                    image_response = client.models.generate_content(
-                        model='gemini-3-pro-image-preview', 
-                        contents=image_prompt,
-                        config=types.GenerateContentConfig(
-                            response_modalities=['IMAGE'],
-                            image_config=types.ImageConfig(
-                                aspect_ratio="9:16",
-                                image_size="1K"
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        image_response = client.models.generate_content(
+                            model='gemini-3-pro-image-preview', 
+                            contents=image_prompt,
+                            config=types.GenerateContentConfig(
+                                response_modalities=['IMAGE'],
+                                image_config=types.ImageConfig(
+                                    aspect_ratio="9:16",
+                                    image_size="1K"
+                                )
                             )
                         )
-                    )
 
-                    # Saving image locally
-                    for part in image_response.parts:
-                        if part.inline_data:
-                            img_data = part.inline_data.data # This is bytes
-                            
-                            filename = f"step_{int(time.time())}_{data['steps'].index(step)}.png"
-                            os.makedirs("static", exist_ok=True)
-                            with open(f"static/{filename}", "wb") as f:
-                                f.write(img_data)
-                            
-                            step['image_url'] = f"/static/{filename}"
-                            print(f"Generated image for step: {step['description'][:20]}...")
-                            break # Only need one image
-                except Exception as e:
-                    print(f"Failed to generate content (image) for step: {e}")
-                    step['image_url'] = None
+                        # Saving image locally
+                        if image_response.parts:
+                            saved = False
+                            for part in image_response.parts:
+                                if part.inline_data:
+                                    img_data = part.inline_data.data # This is bytes
+                                    
+                                    filename = f"step_{int(time.time())}_{data['steps'].index(step)}.png"
+                                    os.makedirs("static", exist_ok=True)
+                                    with open(f"static/{filename}", "wb") as f:
+                                        f.write(img_data)
+                                    
+                                    step['image_url'] = f"/static/{filename}"
+                                    print(f"Generated image for step: {step['description'][:20]}...")
+                                    saved = True
+                                    break # Only need one image
+                            if saved:
+                                break # Exit retry loop on success
+                    except Exception as e:
+                        if "503" in str(e) or "429" in str(e):
+                            if attempt < max_retries - 1:
+                                sleep_time = (attempt + 1) * 2
+                                print(f"Generate failed with {e}, retrying in {sleep_time}s...")
+                                time.sleep(sleep_time)
+                                continue
+                        print(f"Failed to generate content (image) for step: {e}")
+                        step['image_url'] = None
+                        break # Don't retry other errors or if retries exhausted
 
             except Exception as e:
                 print(f"Failed to process step image: {e}")
