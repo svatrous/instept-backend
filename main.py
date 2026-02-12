@@ -24,7 +24,7 @@ async def analyze_recipe(request: AnalyzeRequest):
 
         # 2. Analyze with Gemini
         print("Analyzing with Gemini...")
-        recipe = analyze_video(video_path)
+        recipe = analyze_video(video_path, request.url, request.language)
         return recipe
 
     except Exception as e:

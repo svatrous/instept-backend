@@ -13,8 +13,18 @@ class Step(BaseModel):
 class Recipe(BaseModel):
     title: str
     description: str
+    category: str = "Dinner"
+    rating: float = 4.8
+    reviews_count: int = 124
+    time: str = "30 min"
+    difficulty: str = "Medium"
+    calories: str = "450"
+    author_name: str = "Chef Mario"
+    author_avatar: str = "" # URL to avatar
+    hero_image_url: Optional[str] = None
     ingredients: List[Ingredient]
     steps: List[Step]
 
 class AnalyzeRequest(BaseModel):
     url: str
+    language: str = "en"

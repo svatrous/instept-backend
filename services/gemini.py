@@ -35,20 +35,25 @@ def analyze_video(video_path: str) -> Recipe:
     print(f"\nFile is ready: {video_file.name}")
 
     prompt = """
-    Проанализируй это видео и извлеки рецепт.
-    Верни результат в формате JSON следующей структуры:
+    Analyze this video and extract the recipe.
+    Return the result in JSON format with the following structure:
     {
-        "title": "Название рецепта",
-        "description": "Краткое описание",
+        "title": "Recipe Title",
+        "description": "Short description (max 2 sentences)",
+        "category": "Category (e.g., Breakfast, Lunch, Dinner, Dessert, Snack)",
+        "time": "Total cooking time (e.g., 25 min)",
+        "difficulty": "Difficulty level (Easy, Medium, Hard)",
+        "calories": "Estimated calories per serving (e.g., 450)",
         "ingredients": [
-            {"name": "Название ингредиента", "amount": "Количество", "unit": "Единица измерения"}
+            {"name": "Ingredient Name", "amount": "Amount", "unit": "Unit"}
         ],
         "steps": [
-            {"description": "Описание шага 1"},
-            {"description": "Описание шага 2"}
+            {"description": "Step 1 description"},
+            {"description": "Step 2 description"}
         ]
     }
-    Убедись, что выходные данные являются валидным JSON. Не включай блоки кода markdown.
+    Ensure the output is valid JSON. Do not include markdown code blocks.
+    Response MUST be in English.
     """
 
     try:
@@ -65,6 +70,17 @@ def analyze_video(video_path: str) -> Recipe:
         text_response = response.text.replace("```json", "").replace("```", "").strip()
         
         data = json.loads(text_response)
+        
+        # Add default/random values for fields not extracted if missing
+        import random
+        if "rating" not in data:
+            data["rating"] = round(random.uniform(4.0, 5.0), 1)
+        if "reviews_count" not in data:
+            data["reviews_count"] = random.randint(50, 500)
+        if "author_name" not in data:
+            data["author_name"] = "Chef Mario"
+        if "author_avatar" not in data:
+            data["author_avatar"] = "https://i.pravatar.cc/150?u=chef" # Placeholder or local asset later
         
         # Generate images for each step
         print("Generating images for steps...")
@@ -133,6 +149,10 @@ def analyze_video(video_path: str) -> Recipe:
             except Exception as e:
                 print(f"Failed to process step image: {e}")
                 step['image_url'] = None
+
+        # Set hero image to first step image if available
+        if data.get("steps") and data["steps"][0].get("image_url"):
+            data["hero_image_url"] = data["steps"][0]["image_url"]
 
         return Recipe(**data)
         
