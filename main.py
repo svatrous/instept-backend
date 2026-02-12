@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
-from .services.downloader import download_instagram_video
-from .services.gemini import analyze_video
-from .models import Recipe, AnalyzeRequest
+from services.downloader import download_instagram_video
+from services.gemini import analyze_video
+from models import Recipe, AnalyzeRequest
 
 app = FastAPI()
 
