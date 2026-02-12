@@ -20,7 +20,7 @@ def analyze_video(video_path: str) -> Recipe:
     """
     print(f"Uploading file: {video_path}")
     # Upload the file
-    video_file = client.files.upload(path=video_path)
+    video_file = client.files.upload(file=video_path)
     print(f"Completed upload: {video_file.name}")
 
     # Wait for processing
