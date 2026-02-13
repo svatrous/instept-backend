@@ -55,6 +55,16 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
         text_response = response.text.replace("```json", "").replace("```", "").strip()
         data = json.loads(text_response)
         
+        # Handle case where Gemini returns a list instead of a dict
+        if isinstance(data, list):
+            if len(data) > 0 and isinstance(data[0], dict):
+                data = data[0]
+            else:
+                # Try to find a dict in the list that looks like a recipe? 
+                # Or just error out gracefully
+                print("Translation returned a list without a valid dict")
+                return recipe
+
         # Preserve original images/metadata
         translated_recipe = Recipe(**data)
         translated_recipe.id = recipe.id
@@ -155,7 +165,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                 for attempt in range(max_retries):
                     try:
                         image_response = client.models.generate_content(
-                            model='gemini-2.0-flash', 
+                            model='imagen-3.0-generate-001', 
                             contents=image_prompt,
                             config=types.GenerateContentConfig(
                                 response_modalities=['IMAGE'],
