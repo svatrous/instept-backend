@@ -47,4 +47,6 @@ dmypy.json
 .vscode/
 
 # MacOS
-.DS_Store
+
+# Firebase
+firebase_credentials.json

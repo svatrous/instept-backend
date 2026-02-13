@@ -10,7 +10,8 @@ class Step(BaseModel):
     description: str
     image_url: Optional[str] = None
 
-class Recipe(BaseModel):
+    id: Optional[str] = None
+    source_url: Optional[str] = None
     title: str
     description: str
     category: str = "Dinner"
