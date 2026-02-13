@@ -59,11 +59,40 @@ def save_recipe_to_firestore(recipe_data: dict, source_url: str, language: str) 
         print("Firebase not initialized, skipping Firestore save.")
         return None
         
+import re
+
+def generate_recipe_id(source_url: str) -> str:
+    """
+    Generates a unique ID for the recipe based on the source URL.
+    For Instagram, it tries to extract the shortcode (e.g. from /reel/SHORTCODE).
+    Falls back to hashing the URL without query parameters.
+    """
+    # Try to extract Instagram shortcode
+    # Matches /reel/CODE or /p/CODE
+    match = re.search(r'instagram\.com/(?:reel|p)/([^/?#]+)', source_url)
+    if match:
+        unique_key = match.group(1)
+        # print(f"Extracted Instagram key: {unique_key}")
+    else:
+        # Fallback: remove query params
+        unique_key = source_url.split('?')[0].split('#')[0]
+    
+    return hashlib.md5(unique_key.encode()).hexdigest()
+
+def save_recipe_to_firestore(recipe_data: dict, source_url: str, language: str) -> str | None:
+    """
+    Saves or updates a recipe in Firestore.
+    Returns the document ID.
+    """
+    if not firebase_admin._apps:
+        print("Firebase not initialized, skipping Firestore save.")
+        return None
+        
     try:
         db = firestore.client()
         
-        # Generate ID based on URL hash to avoid duplicates
-        recipe_id = hashlib.md5(source_url.encode()).hexdigest()
+        # Generate ID
+        recipe_id = generate_recipe_id(source_url)
         
         doc_ref = db.collection('recipes').document(recipe_id)
         doc = doc_ref.get()
@@ -117,7 +146,7 @@ def get_recipe_from_firestore(source_url: str) -> dict | None:
         
     try:
         db = firestore.client()
-        recipe_id = hashlib.md5(source_url.encode()).hexdigest()
+        recipe_id = generate_recipe_id(source_url)
         doc_ref = db.collection('recipes').document(recipe_id)
         doc = doc_ref.get()
         

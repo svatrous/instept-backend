@@ -6,7 +6,7 @@ import json
 import hashlib
 from models import Recipe, Step, Ingredient
 from dotenv import load_dotenv
-from services.firebase_service import upload_image, save_recipe_to_firestore, get_recipe_from_firestore
+from services.firebase_service import upload_image, save_recipe_to_firestore, get_recipe_from_firestore, generate_recipe_id
 
 load_dotenv()
 
@@ -94,7 +94,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
         if language in translations:
             print(f"Returning cached recipe for language: {language}")
             cached_recipe = Recipe(**translations[language])
-            cached_recipe.id = hashlib.md5(video_url.encode()).hexdigest()
+            cached_recipe.id = generate_recipe_id(video_url)
             cached_recipe.source_url = video_url
             # Restore hero image if not in translation but in main doc
             if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
@@ -109,7 +109,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
         if base_lang in translations:
             print(f"Found base recipe in {base_lang}, translating to {language}...")
             base_recipe = Recipe(**translations[base_lang])
-            base_recipe.id = hashlib.md5(video_url.encode()).hexdigest()
+            base_recipe.id = generate_recipe_id(video_url)
             base_recipe.source_url = video_url
             
             translated = translate_recipe(base_recipe, language)
