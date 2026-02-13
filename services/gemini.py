@@ -260,11 +260,11 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
         data = json.loads(text_response)
         
         # Add default/random values
-        import random
+        # Initialize rating to 0 for new recipes
         if "rating" not in data:
-            data["rating"] = round(random.uniform(4.0, 5.0), 1)
+            data["rating"] = 0.0
         if "reviews_count" not in data:
-            data["reviews_count"] = random.randint(50, 500)
+            data["reviews_count"] = 0
         if "author_name" not in data:
             data["author_name"] = "Chef Mario"
         if "author_avatar" not in data:
