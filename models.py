@@ -24,6 +24,8 @@ class Recipe(BaseModel):
     author_name: str = "Chef Mario"
     author_avatar: str = "" # URL to avatar
     hero_image_url: Optional[str] = None
+    created_at: Optional[str] = None # ISO format or timestamp
+    likes_count: int = 0
     ingredients: List[Ingredient]
     steps: List[Step]
 

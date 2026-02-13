@@ -114,6 +114,7 @@ def save_recipe_to_firestore(recipe_data: dict, source_url: str, language: str) 
             new_recipe = {
                 'source_url': source_url,
                 'created_at': firestore.SERVER_TIMESTAMP,
+                'likes_count': 0,
                 'translations': {
                     language: recipe_data
                 },
