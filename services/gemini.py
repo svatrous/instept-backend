@@ -186,16 +186,24 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
         
         # Generate images for each step
         print("Generating images for steps...")
+        previous_images = []
+        
         for i, step in enumerate(data.get("steps", [])):
             try:
                 image_prompt = f"Food photography, vertical 9:16 aspect ratio. Create a high quality, appetizing image for this recipe step: {step['description']}. The dish is {data.get('title')}. No text, no words, no letters."
                 
+                # Build contents with context
+                contents = []
+                for prev_img_data in previous_images:
+                    contents.append(types.Part.from_bytes(data=prev_img_data, mime_type="image/png"))
+                contents.append(image_prompt)
+
                 max_retries = 3
                 for attempt in range(max_retries):
                     try:
                         image_response = client.models.generate_content(
                             model='gemini-3-pro-image-preview', 
-                            contents=image_prompt,
+                            contents=contents,
                             config=types.GenerateContentConfig(
                                 response_modalities=['IMAGE'],
                                 image_config=types.ImageConfig(
@@ -210,6 +218,10 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                             for part in image_response.parts:
                                 if part.inline_data:
                                     img_data = part.inline_data.data
+                                    
+                                    # Store logic for next steps (limit to last 3 to save tokens/complexity if needed, or all)
+                                    # The model supports up to 14 reference images.
+                                    previous_images.append(img_data)
                                     
                                     # Save locally momentarily to upload
                                     temp_filename = f"step_{int(time.time())}_{i}.png"
