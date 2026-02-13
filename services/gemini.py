@@ -163,7 +163,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
     try:
         # Generate content
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=[video_file, prompt],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -194,7 +194,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                 for attempt in range(max_retries):
                     try:
                         image_response = client.models.generate_content(
-                            model='gemini-2.5-flash-image', 
+                            model='gemini-3-pro-image-preview', 
                             contents=image_prompt,
                             config=types.GenerateContentConfig(
                                 response_modalities=['IMAGE'],
