@@ -256,9 +256,59 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                 print(f"Failed to process step image: {e}")
                 step['image_url'] = None
 
-        # Set hero image
-        if data.get("steps") and data["steps"][0].get("image_url"):
-            data["hero_image_url"] = data["steps"][0]["image_url"]
+            except Exception as e:
+                print(f"Failed to process step image: {e}")
+                step['image_url'] = None
+
+        # Generate dedicated Hero Image
+        print("Generating hero image...")
+        try:
+            hero_prompt = f"Food photography, vertical 9:16 aspect ratio. A cinematic, high-end hero shot of the final dish: {data.get('title')}. {data.get('description')}. The image should look like a professional magazine cover or cookbook photo. Make it appetizing and beautiful. No text."
+            
+            # Use all previous step images as context
+            hero_contents = []
+            for prev_img_data in previous_images:
+                hero_contents.append(types.Part.from_bytes(data=prev_img_data, mime_type="image/png"))
+            hero_contents.append(hero_prompt)
+            
+            hero_response = client.models.generate_content(
+                model='gemini-3-pro-image-preview', 
+                contents=hero_contents,
+                config=types.GenerateContentConfig(
+                    response_modalities=['IMAGE'],
+                    image_config=types.ImageConfig(
+                        aspect_ratio="9:16",
+                        image_size="1024x1024"
+                    )
+                )
+            )
+            
+            if hero_response.parts:
+                for part in hero_response.parts:
+                    if part.inline_data:
+                        img_data = part.inline_data.data
+                        
+                        temp_filename = f"hero_{int(time.time())}.png"
+                        with open(temp_filename, "wb") as f:
+                            f.write(img_data)
+                        
+                        remote_url = upload_image(temp_filename, f"recipes/{hashlib.md5(video_url.encode()).hexdigest()}/{temp_filename}")
+                        
+                        if remote_url:
+                            data["hero_image_url"] = remote_url
+                            print("Uploaded hero image")
+                        else:
+                            print("Failed to upload hero image")
+                        
+                        os.remove(temp_filename)
+                        break
+        except Exception as e:
+            print(f"Failed to generate hero image: {e}")
+            # Fallback to first step if hero gen fails
+            if data.get("steps") and data["steps"][0].get("image_url"):
+                data["hero_image_url"] = data["steps"][0]["image_url"]
+
+        # If no hero image generated and no step images, it will remain None or handled by frontend placeholder
 
         base_recipe = Recipe(**data)
         base_recipe.source_url = video_url
