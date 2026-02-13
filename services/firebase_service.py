@@ -106,3 +106,26 @@ def save_recipe_to_firestore(recipe_data: dict, source_url: str, language: str) 
     except Exception as e:
         print(f"Failed to save recipe to Firestore: {e}")
         return None
+
+def get_recipe_from_firestore(source_url: str) -> dict | None:
+    """
+    Fetches a recipe from Firestore by source URL hash.
+    Returns the document data if it exists, else None.
+    """
+    if not firebase_admin._apps:
+        return None
+        
+    try:
+        db = firestore.client()
+        recipe_id = hashlib.md5(source_url.encode()).hexdigest()
+        doc_ref = db.collection('recipes').document(recipe_id)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            print(f"Found existing recipe {recipe_id} in Firestore")
+            return doc.to_dict()
+        else:
+            return None
+    except Exception as e:
+        print(f"Failed to fetch recipe from Firestore: {e}")
+        return None

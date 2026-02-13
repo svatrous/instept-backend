@@ -6,7 +6,7 @@ import json
 import hashlib
 from models import Recipe, Step, Ingredient
 from dotenv import load_dotenv
-from services.firebase_service import upload_image, save_recipe_to_firestore
+from services.firebase_service import upload_image, save_recipe_to_firestore, get_recipe_from_firestore
 
 load_dotenv()
 
@@ -86,12 +86,41 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
     Handles caching and translation.
     """
     
-    # 1. Check if recipe exists in Firestore (optional optimization, but let's proceed to analyze or just translate)
-    # Ideally we'd check Firestore here.
-    
+    # 1. Check if recipe exists in Firestore
+    existing_data = get_recipe_from_firestore(video_url)
+    if existing_data:
+        # Check if requested language exists in translations
+        translations = existing_data.get('translations', {})
+        if language in translations:
+            print(f"Returning cached recipe for language: {language}")
+            cached_recipe = Recipe(**translations[language])
+            cached_recipe.id = hashlib.md5(video_url.encode()).hexdigest()
+            cached_recipe.source_url = video_url
+            # Restore hero image if not in translation but in main doc
+            if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
+                cached_recipe.hero_image_url = existing_data.get('hero_image_url')
+            return cached_recipe
+        
+        # If language not found, but we have English (or another base), use it as base for translation
+        # Typically the 'base' recipe might not be stored separately if we only use translations map.
+        # But our save logic puts 'translations' map. 
+        # We can pick 'en' or any available language to translate FROM.
+        base_lang = 'en'
+        if base_lang in translations:
+            print(f"Found base recipe in {base_lang}, translating to {language}...")
+            base_recipe = Recipe(**translations[base_lang])
+            base_recipe.id = hashlib.md5(video_url.encode()).hexdigest()
+            base_recipe.source_url = video_url
+            
+            translated = translate_recipe(base_recipe, language)
+            save_recipe_to_firestore(translated.dict(), video_url, language)
+            translated.id = base_recipe.id
+            return translated
+            
     # If we are here, we need to process the video.
     if not video_path:
-        raise ValueError("Video path is required.")
+        # If no video path and no cache, we can't do anything
+        raise ValueError("Video path is required for new analysis.")
 
     # 3. Analyze video
     print(f"Uploading file: {video_path}")
