@@ -6,15 +6,28 @@ import time
 
 # Initialize Firebase Admin
 try:
+    cred = None
+    # 1. Try local file
     cred_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "firebase_credentials.json")
     if os.path.exists(cred_path):
+        print(f"Loading Firebase credentials from file: {cred_path}")
         cred = credentials.Certificate(cred_path)
+    
+    # 2. Try environment variable (for deployment)
+    elif os.getenv("FIREBASE_CREDENTIALS_JSON"):
+        print("Loading Firebase credentials from FIREBASE_CREDENTIALS_JSON env var")
+        # Parse JSON string from env var
+        import json
+        cred_dict = json.loads(os.getenv("FIREBASE_CREDENTIALS_JSON"))
+        cred = credentials.Certificate(cred_dict)
+        
+    if cred:
         firebase_admin.initialize_app(cred, {
             'storageBucket': f"{cred.project_id}.firebasestorage.app" 
         })
         print("Firebase Admin initialized successfully.")
     else:
-        print(f"Warning: firebase_credentials.json not found at {cred_path}. Firebase features will be disabled.")
+        print(f"Warning: No Firebase credentials found (checked {cred_path} and FIREBASE_CREDENTIALS_JSON). Firebase features will be disabled.")
 except Exception as e:
     print(f"Error initializing Firebase Admin: {e}")
 
