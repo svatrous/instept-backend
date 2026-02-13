@@ -115,6 +115,8 @@ def save_recipe_to_firestore(recipe_data: dict, source_url: str, language: str) 
                 'source_url': source_url,
                 'created_at': firestore.SERVER_TIMESTAMP,
                 'likes_count': 0,
+                'rating': recipe_data.get('rating', 0.0),
+                'reviews_count': recipe_data.get('reviews_count', 0),
                 'translations': {
                     language: recipe_data
                 },
@@ -159,4 +161,48 @@ def get_recipe_from_firestore(source_url: str) -> dict | None:
             return None
     except Exception as e:
         print(f"Failed to fetch recipe from Firestore: {e}")
+        return None
+
+def update_recipe_rating(recipe_id: str, new_rating: int) -> dict | None:
+    """
+    Updates the recipe rating atomically.
+    """
+    if not firebase_admin._apps:
+        return None
+        
+    try:
+        db = firestore.client()
+        doc_ref = db.collection('recipes').document(recipe_id)
+        
+        @firestore.transactional
+        def update_in_transaction(transaction, doc_ref):
+            snapshot = doc_ref.get(transaction=transaction)
+            if not snapshot.exists:
+                return None
+            
+            data = snapshot.to_dict()
+            current_rating = float(data.get('rating', 0.0))
+            current_count = int(data.get('reviews_count', 0))
+            
+            # Calculate new average
+            new_count = current_count + 1
+            new_average = ((current_rating * current_count) + new_rating) / new_count
+            
+            # Round to 1 decimal place
+            new_average = round(new_average, 1)
+            
+            transaction.update(doc_ref, {
+                'rating': new_average,
+                'reviews_count': new_count
+            })
+            
+            return {'rating': new_average, 'reviews_count': new_count}
+            
+        transaction = db.transaction()
+        result = update_in_transaction(transaction, doc_ref)
+        print(f"Updated rating for {recipe_id}: {result}")
+        return result
+        
+    except Exception as e:
+        print(f"Failed to update rating: {e}")
         return None

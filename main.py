@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import os
 from services.downloader import download_instagram_video
 from services.gemini import analyze_video, get_cached_recipe
+from services.firebase_service import update_recipe_rating
 from models import Recipe, AnalyzeRequest
 
 from fastapi.staticfiles import StaticFiles
@@ -38,10 +39,21 @@ async def analyze_recipe(request: AnalyzeRequest):
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # 3. Cleanup
         if video_path and os.path.exists(video_path):
             os.remove(video_path)
             print("Cleaned up temporary video file.")
+
+class RateRequest(BaseModel):
+    recipe_id: str
+    rating: int
+
+@app.post("/rate")
+async def rate_recipe(request: RateRequest):
+    print(f"Rating recipe {request.recipe_id} with {request.rating}")
+    result = update_recipe_rating(request.recipe_id, request.rating)
+    if not result:
+        raise HTTPException(status_code=400, detail="Failed to update rating")
+    return result
 
 if __name__ == "__main__":
     import uvicorn

@@ -28,6 +28,11 @@ def get_cached_recipe(video_url: str, language: str) -> Recipe | None:
             print(f"Main: Found cached recipe for {language}")
             cached_recipe = Recipe(**translations[language])
             cached_recipe.id = generate_recipe_id(video_url)
+            # Use global rating if available
+            if 'rating' in existing_data:
+                cached_recipe.rating = float(existing_data['rating'])
+            if 'reviews_count' in existing_data:
+                cached_recipe.reviews_count = int(existing_data['reviews_count'])
             cached_recipe.source_url = video_url
             if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
                 cached_recipe.hero_image_url = existing_data.get('hero_image_url')
@@ -82,6 +87,11 @@ def get_cached_recipe(video_url: str, language: str) -> Recipe | None:
              print(f"Main: Found base 'en' recipe, translating to {language}...")
              base_recipe = Recipe(**translations['en'])
              base_recipe.id = generate_recipe_id(video_url)
+             # Use global rating if available
+             if 'rating' in existing_data:
+                 base_recipe.rating = float(existing_data['rating'])
+             if 'reviews_count' in existing_data:
+                 base_recipe.reviews_count = int(existing_data['reviews_count'])
              base_recipe.source_url = video_url
              if not base_recipe.hero_image_url and existing_data.get('hero_image_url'):
                  base_recipe.hero_image_url = existing_data.get('hero_image_url')
@@ -161,6 +171,11 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
             print(f"Returning cached recipe for language: {language}")
             cached_recipe = Recipe(**translations[language])
             cached_recipe.id = generate_recipe_id(video_url)
+            # Use global rating if available
+            if 'rating' in existing_data:
+                cached_recipe.rating = float(existing_data['rating'])
+            if 'reviews_count' in existing_data:
+                cached_recipe.reviews_count = int(existing_data['reviews_count'])
             cached_recipe.source_url = video_url
             # Restore hero image if not in translation but in main doc
             if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
@@ -176,6 +191,11 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
             print(f"Found base recipe in {base_lang}, translating to {language}...")
             base_recipe = Recipe(**translations[base_lang])
             base_recipe.id = generate_recipe_id(video_url)
+            # Use global rating if available
+            if 'rating' in existing_data:
+                base_recipe.rating = float(existing_data['rating'])
+            if 'reviews_count' in existing_data:
+                base_recipe.reviews_count = int(existing_data['reviews_count'])
             base_recipe.source_url = video_url
             
             translated = translate_recipe(base_recipe, language)
