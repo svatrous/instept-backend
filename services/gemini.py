@@ -20,13 +20,79 @@ client = genai.Client(api_key=api_key)
 # For now, we will rely on Firestore check effectively serving as cache check if the document exists.
 
 def get_cached_recipe(video_url: str, language: str) -> Recipe | None:
-    # TODO: Implement Firestore fetch as cache check if needed.
-    # For now, we assume if we hit analyze endpoint, we might want fresh check or handle it in main.py
-    # But main.py calls this. Let's return None to force re-analysis or fetch from Firestore if we implement read.
-    # Given the task, we are moving STORAGE to Firebase.
-    # The `main.py` logic checks cache to avoid re-downloading.
-    # We can leave local file check for now to not break existing flow, OR update to check Firestore.
-    # Let's keep existing local check as a "hot" cache for development, but in production we'd check Firestore.
+    existing_data = get_recipe_from_firestore(video_url)
+    if existing_data:
+        # 1. Check if exact language exists
+        translations = existing_data.get('translations', {})
+        if language in translations:
+            print(f"Main: Found cached recipe for {language}")
+            cached_recipe = Recipe(**translations[language])
+            cached_recipe.id = generate_recipe_id(video_url)
+            cached_recipe.source_url = video_url
+            if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
+                cached_recipe.hero_image_url = existing_data.get('hero_image_url')
+            return cached_recipe
+        
+        # 2. Check if 'en' exists (base) - usually strictly speaking main.py logic check
+        # But here we just return None if specific lang not found so main.py triggers analysis
+        # WAIT: analyze_video ALSO checks cache. 
+        # If we return None here, main.py downloads video, then calls analyze_video.
+        # analyze_video checks cache again, finds base 'en', translates it, and returns.
+        # SO: We downloaded video for nothing if 'en' exists but 'ru' doesn't!
+        
+        # Optimization: If ANY version exists, we don't need the video to translate!
+        # analyze_video handles translation from base without video_path if base exists.
+        # So we should return the BASE recipe here if target lang missing, 
+        # and let analyze_video handle translation? 
+        # NO, main.py expects a result to return immediately if not None.
+        
+        # If we return a Recipe here, main.py returns it.
+        # If we return None, main.py downloads.
+        
+        # We need a way to tell main.py "Don't download, let analyze_video handle translation".
+        # distinct from "Don't download, here is the result".
+        
+        # Actually, analyze_video signature: (video_path, video_url, language).
+        # If video_path is None, it throws error UNLESS cache exists.
+        # So we can just return True/False? No, main.py logic is:
+        # if get_cached_recipe(...) returns valid Recipe -> return it.
+        # else -> download -> analyze.
+        
+        # If we have 'en' but need 'ru': 
+        # get_cached_recipe('ru') -> returns None (if we only look for 'ru').
+        # main.py downloads.
+        # analyze_video('ru') -> finds 'en', translates, saves 'ru'.
+        # We wasted a download.
+        
+        # Solution: get_cached_recipe should return the TRANSLATED recipe if base exists!
+        # valid? Yes, we can do translation here too or call analyze logic?
+        # Better: analyze_video does the heavy lifting.
+        # But analyze_video needs video_path if it *can't* find base.
+        
+        # If we change main.py to:
+        # 1. Check if *any* cache exists (base).
+        # 2. If yes -> skip download, call analyze_video(None, url, lang).
+        # 3. If no -> download, call analyze_video(path, url, lang).
+        
+        # Let's DO THAT in main.py? 
+        # Or make get_cached_recipe smart enough to translate?
+        # Smart get_cached_recipe is better for encapsulation.
+        
+        if 'en' in translations:
+             print(f"Main: Found base 'en' recipe, translating to {language}...")
+             base_recipe = Recipe(**translations['en'])
+             base_recipe.id = generate_recipe_id(video_url)
+             base_recipe.source_url = video_url
+             if not base_recipe.hero_image_url and existing_data.get('hero_image_url'):
+                 base_recipe.hero_image_url = existing_data.get('hero_image_url')
+
+             translated = translate_recipe(base_recipe, language)
+             # We should probably save it too?
+             # Yes, save the translation.
+             save_recipe_to_firestore(translated.dict(), video_url, language)
+             translated.id = base_recipe.id
+             return translated
+
     return None
 
 def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
