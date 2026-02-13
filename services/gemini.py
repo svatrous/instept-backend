@@ -229,7 +229,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                                         f.write(img_data)
                                     
                                     # Upload to Firebase Storage
-                                    remote_url = upload_image(temp_filename, f"recipes/{hashlib.md5(video_url.encode()).hexdigest()}/{temp_filename}")
+                                    remote_url = upload_image(temp_filename, f"recipes/{generate_recipe_id(video_url)}/{temp_filename}")
                                     
                                     if remote_url:
                                         step['image_url'] = remote_url
@@ -292,7 +292,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                         with open(temp_filename, "wb") as f:
                             f.write(img_data)
                         
-                        remote_url = upload_image(temp_filename, f"recipes/{hashlib.md5(video_url.encode()).hexdigest()}/{temp_filename}")
+                        remote_url = upload_image(temp_filename, f"recipes/{generate_recipe_id(video_url)}/{temp_filename}")
                         
                         if remote_url:
                             data["hero_image_url"] = remote_url

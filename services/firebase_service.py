@@ -147,6 +147,7 @@ def get_recipe_from_firestore(source_url: str) -> dict | None:
     try:
         db = firestore.client()
         recipe_id = generate_recipe_id(source_url)
+        print(f"Checking Firestore cache for recipe ID: {recipe_id} (from URL: {source_url})")
         doc_ref = db.collection('recipes').document(recipe_id)
         doc = doc_ref.get()
         
