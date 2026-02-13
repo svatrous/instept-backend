@@ -165,7 +165,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
                 for attempt in range(max_retries):
                     try:
                         image_response = client.models.generate_content(
-                            model='imagen-3.0-generate-001', 
+                            model='gemini-2.5-flash-image', 
                             contents=image_prompt,
                             config=types.GenerateContentConfig(
                                 response_modalities=['IMAGE'],
