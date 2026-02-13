@@ -37,3 +37,4 @@ class Recipe(BaseModel):
 class AnalyzeRequest(BaseModel):
     url: str
     language: str = "en"
+    fcm_token: Optional[str] = None
