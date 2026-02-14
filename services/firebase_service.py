@@ -242,3 +242,25 @@ def send_push_notification(token: str, title: str, body: str, data: dict = None)
     except Exception as e:
         print(f"Error sending message: {e}")
         return False
+
+def add_recipe_to_user(user_id: str, recipe_id: str) -> bool:
+    """
+    Adds a recipe ID to the user's saved_recipes array.
+    """
+    if not firebase_admin._apps:
+        return False
+        
+    try:
+        db = firestore.client()
+        user_ref = db.collection('users').document(user_id)
+        
+        # Atomically add to array
+        user_ref.set({
+            'saved_recipes': firestore.ArrayUnion([recipe_id])
+        }, merge=True)
+        
+        print(f"Added recipe {recipe_id} to user {user_id}")
+        return True
+    except Exception as e:
+        print(f"Failed to add recipe to user: {e}")
+        return False

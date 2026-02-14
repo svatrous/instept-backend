@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import os
 from services.downloader import download_instagram_video
 from services.gemini import analyze_video, get_cached_recipe
-from services.firebase_service import update_recipe_rating, send_push_notification
+from services.firebase_service import update_recipe_rating, send_push_notification, add_recipe_to_user
 from models import Recipe, AnalyzeRequest
 
 from fastapi.staticfiles import StaticFiles
@@ -19,7 +19,7 @@ class ProcessingResponse(BaseModel):
     message: str
     recipe_id: str | None = None
 
-def process_video_background(url: str, language: str, fcm_token: str | None):
+def process_video_background(url: str, language: str, fcm_token: str | None, user_id: str | None):
     """
     Background task to process video and send push notification.
     """
@@ -46,9 +46,14 @@ def process_video_background(url: str, language: str, fcm_token: str | None):
         print("Analyzing with Gemini...")
         recipe = analyze_video(video_path, url, language, author_name=metadata.get("author_name"))
         
+        
         print(f"Background processing complete. Recipe ID: {recipe.id}")
         
-        # 3. Send Push Notification
+        # 3. Save to User (if user_id provided)
+        if user_id and recipe and recipe.id:
+            add_recipe_to_user(user_id, recipe.id)
+
+        # 4. Send Push Notification
         if fcm_token and recipe:
             send_push_notification(
                 token=fcm_token,
@@ -99,7 +104,8 @@ async def analyze_recipe(request: AnalyzeRequest, background_tasks: BackgroundTa
         process_video_background, 
         request.url, 
         request.language, 
-        request.fcm_token
+        request.fcm_token,
+        request.user_id
     )
     
     return ProcessingResponse(

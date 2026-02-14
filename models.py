@@ -40,3 +40,4 @@ class AnalyzeRequest(BaseModel):
     url: str
     language: str = "en"
     fcm_token: Optional[str] = None
+    user_id: Optional[str] = None
