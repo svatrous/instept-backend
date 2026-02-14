@@ -140,6 +140,22 @@ async def translate_recipe_endpoint(request: AnalyzeRequest):
         
     raise HTTPException(status_code=404, detail="Recipe not found. Please analyze it first.")
 
+@app.get("/recipes/{recipe_id}", response_model=Recipe)
+async def get_recipe_by_id(recipe_id: str):
+    """
+    Fetches a recipe by its ID from Firestore.
+    """
+    from services.firebase_service import get_recipe_by_id_from_firestore
+    
+    recipe_data = get_recipe_by_id_from_firestore(recipe_id)
+    if recipe_data:
+        # If it's a translation document, we might need to handle it?
+        # get_recipe_by_id_from_firestore should return flat dict if possible or we parse it here.
+        # Assuming it returns the stored dict which matches Recipe model
+        return recipe_data
+        
+    raise HTTPException(status_code=404, detail="Recipe not found")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

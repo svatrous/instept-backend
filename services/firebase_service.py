@@ -264,3 +264,23 @@ def add_recipe_to_user(user_id: str, recipe_id: str) -> bool:
     except Exception as e:
         print(f"Failed to add recipe to user: {e}")
         return False
+
+def get_recipe_by_id_from_firestore(recipe_id: str) -> dict | None:
+    """
+    Fetches a recipe from Firestore by its document ID.
+    Returns the document data if it exists, else None.
+    """
+    if not firebase_admin._apps:
+        return None
+        
+    try:
+        db = firestore.client()
+        doc = db.collection("recipes").document(recipe_id).get()
+        if doc.exists:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            return data
+        return None
+    except Exception as e:
+        print(f"Error fetching recipe {recipe_id}: {e}")
+        return None
