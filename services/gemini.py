@@ -113,7 +113,7 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
     Preserve the JSON structure exactly.
     Do NOT translate the keys.
     Do NOT translate image_url.
-    Translate title, description, category, difficulty, time, calories, ingredient names, ingredient amounts, ingredient units, and step descriptions.
+    Translate title, description, category, difficulty, time, calories, ingredient names, ingredient amounts, ingredient units, step descriptions, and step ingredients (if any).
     
     Recipe JSON:
     {recipe.json()}
@@ -149,7 +149,7 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
         translated_recipe.hero_image_url = recipe.hero_image_url
         translated_recipe.language = target_language
         translated_recipe.steps = [
-            Step(description=s.description, image_url=orig_s.image_url) 
+            Step(description=s.description, image_url=orig_s.image_url, ingredients=s.ingredients) 
             for s, orig_s in zip(translated_recipe.steps, recipe.steps)
         ]
         
@@ -241,8 +241,16 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en", 
             {"name": "Ingredient Name", "amount": "Amount", "unit": "Unit"}
         ],
         "steps": [
-            {"description": "Step 1 description"},
-            {"description": "Step 2 description"}
+            {
+                "description": "Step 1 description",
+                "ingredients": [
+                    {"name": "Ingredient Name", "amount": "Amount", "unit": "Unit"}
+                ]
+            },
+            {
+                "description": "Step 2 description",
+                 "ingredients": []
+            }
         ]
     }
     Ensure the output is valid JSON. Do not include markdown code blocks.

@@ -9,6 +9,7 @@ class Ingredient(BaseModel):
 class Step(BaseModel):
     description: str
     image_url: Optional[str] = None
+    ingredients: List[Ingredient] = []
 
 class Recipe(BaseModel):
     id: Optional[str] = None
