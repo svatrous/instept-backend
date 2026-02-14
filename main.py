@@ -117,6 +117,21 @@ async def rate_recipe(request: RateRequest):
         raise HTTPException(status_code=400, detail="Failed to update rating")
     return result
 
+@app.post("/translate", response_model=Recipe)
+async def translate_recipe_endpoint(request: AnalyzeRequest):
+    """
+    Translates an existing recipe to the target language.
+    """
+    print(f"Translation request for {request.url} to {request.language}")
+    
+    # get_cached_recipe handles finding the base recipe and translating it if needed
+    recipe = get_cached_recipe(request.url, request.language)
+    
+    if recipe:
+        return recipe
+        
+    raise HTTPException(status_code=404, detail="Recipe not found. Please analyze it first.")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

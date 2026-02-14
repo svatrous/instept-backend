@@ -34,6 +34,7 @@ def get_cached_recipe(video_url: str, language: str) -> Recipe | None:
             if 'reviews_count' in existing_data:
                 cached_recipe.reviews_count = int(existing_data['reviews_count'])
             cached_recipe.source_url = video_url
+            cached_recipe.language = language
             if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
                 cached_recipe.hero_image_url = existing_data.get('hero_image_url')
             return cached_recipe
@@ -146,6 +147,7 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
         translated_recipe.id = recipe.id
         translated_recipe.source_url = recipe.source_url
         translated_recipe.hero_image_url = recipe.hero_image_url
+        translated_recipe.language = target_language
         translated_recipe.steps = [
             Step(description=s.description, image_url=orig_s.image_url) 
             for s, orig_s in zip(translated_recipe.steps, recipe.steps)
@@ -177,6 +179,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
             if 'reviews_count' in existing_data:
                 cached_recipe.reviews_count = int(existing_data['reviews_count'])
             cached_recipe.source_url = video_url
+            cached_recipe.language = language
             # Restore hero image if not in translation but in main doc
             if not cached_recipe.hero_image_url and existing_data.get('hero_image_url'):
                 cached_recipe.hero_image_url = existing_data.get('hero_image_url')
@@ -398,6 +401,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
 
         base_recipe = Recipe(**data)
         base_recipe.source_url = video_url
+        base_recipe.language = "en"
         
         # Save to Firestore (English)
         firestore_id = save_recipe_to_firestore(base_recipe.dict(), video_url, "en")

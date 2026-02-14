@@ -28,6 +28,7 @@ class Recipe(BaseModel):
     likes_count: int = 0
     ingredients: List[Ingredient]
     steps: List[Step]
+    language: str = "en"
 
     @field_validator('calories', 'time', 'difficulty', 'category', mode='before')
     @classmethod
