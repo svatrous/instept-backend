@@ -23,6 +23,7 @@ class Recipe(BaseModel):
     calories: str = "450"
     author_name: str = "Chef Mario"
     author_avatar: str = "" # URL to avatar
+    author_url: Optional[str] = None
     hero_image_url: Optional[str] = None
     created_at: Optional[str] = None # ISO format or timestamp
     likes_count: int = 0

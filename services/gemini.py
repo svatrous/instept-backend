@@ -270,6 +270,11 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en", 
             data["reviews_count"] = 0
         if "author_name" not in data:
             data["author_name"] = author_name if author_name else "Chef Mario"
+        
+        # If we have a real author handle (not default/Chef Mario), generate URL
+        if "author_url" not in data and data["author_name"] != "Chef Mario":
+             data["author_url"] = f"https://www.instagram.com/{data['author_name']}/"
+
         if "author_avatar" not in data:
             data["author_avatar"] = "https://i.pravatar.cc/150?u=chef"
         

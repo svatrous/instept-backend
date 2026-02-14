@@ -28,8 +28,9 @@ def download_instagram_video(url: str, output_dir: str = "temp") -> tuple[str, d
             filename = ydl.prepare_filename(info)
             
             # Extract relevant metadata
+            # For Instagram, uploader_id is the handle (nickname), uploader is often full name
             metadata = {
-                "author_name": info.get("uploader") or info.get("channel") or info.get("uploader_id") or "Unknown Chef",
+                "author_name": info.get("uploader_id") or info.get("uploader") or "Unknown Chef",
                 "title": info.get("title"),
                 "description": info.get("description")
             }
