@@ -2,9 +2,9 @@ import yt_dlp
 import os
 import uuid
 
-def download_instagram_video(url: str, output_dir: str = "temp") -> str:
+def download_instagram_video(url: str, output_dir: str = "temp") -> tuple[str, dict]:
     """
-    Downloads an Instagram video using yt-dlp and returns the path to the file.
+    Downloads an Instagram video using yt-dlp and returns the path to the file and metadata.
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -26,7 +26,15 @@ def download_instagram_video(url: str, output_dir: str = "temp") -> str:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
-            return filename
+            
+            # Extract relevant metadata
+            metadata = {
+                "author_name": info.get("uploader") or info.get("channel") or info.get("uploader_id") or "Unknown Chef",
+                "title": info.get("title"),
+                "description": info.get("description")
+            }
+            
+            return filename, metadata
     except yt_dlp.utils.DownloadError as e:
         raise ValueError(f"Failed to download video: {str(e)}")
     except Exception as e:

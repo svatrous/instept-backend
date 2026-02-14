@@ -158,7 +158,7 @@ def translate_recipe(recipe: Recipe, target_language: str) -> Recipe:
         print(f"Translation failed: {e}")
         return recipe # Fallback to original
 
-def analyze_video(video_path: str | None, video_url: str, language: str = "en") -> Recipe:
+def analyze_video(video_path: str | None, video_url: str, language: str = "en", author_name: str | None = None) -> Recipe:
     """
     Uploads a video to Gemini and analyzes it to extract a recipe.
     Handles caching and translation.
@@ -269,7 +269,7 @@ def analyze_video(video_path: str | None, video_url: str, language: str = "en") 
         if "reviews_count" not in data:
             data["reviews_count"] = 0
         if "author_name" not in data:
-            data["author_name"] = "Chef Mario"
+            data["author_name"] = author_name if author_name else "Chef Mario"
         if "author_avatar" not in data:
             data["author_avatar"] = "https://i.pravatar.cc/150?u=chef"
         

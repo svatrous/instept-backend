@@ -35,14 +35,16 @@ def process_video_background(url: str, language: str, fcm_token: str | None):
         if not has_cache:
             # 1. Download Video
             print(f"Downloading video from: {url}")
-            video_path = download_instagram_video(url)
+            video_path, metadata = download_instagram_video(url)
             print(f"Video downloaded to: {video_path}")
+            print(f"Metadata extracted: {metadata}")
         else:
             print("Cache found, skipping download.")
+            metadata = {}
 
         # 2. Analyze with Gemini (this saves to Firestore internally)
         print("Analyzing with Gemini...")
-        recipe = analyze_video(video_path, url, language)
+        recipe = analyze_video(video_path, url, language, author_name=metadata.get("author_name"))
         
         print(f"Background processing complete. Recipe ID: {recipe.id}")
         
